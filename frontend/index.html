@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Customer Support</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #ece5dd;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-container {
+      width: 400px;
+      height: 500px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+
+    .chat-header {
+      text-align: center;
+      background: #d62300;
+      color: white;
+      padding: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f5f5f5;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 15px;
+      border-radius: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #d62300;
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: white;
+      color: black;
+      border-bottom-left-radius: 5px;
+      border: 1px solid #ddd;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #ddd;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 30px;
+      outline: none;
+      font-size: 15px;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      padding: 12px 18px;
+      border: none;
+      background: #d62300;
+      color: white;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .chat-input button:hover {
+      background: #a71b00;
+    }
+
+    .typing {
+      font-size: 14px;
+      color: gray;
+      padding-left: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+
+    <div class="chat-header">
+      Customer Support
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+
+      <div class="message bot">
+        Merhaba 👋<br>
+        Sipariş numaranızı yazarak destek alabilirsiniz.
+      </div>
+
+    </div>
+
+    <div class="chat-input">
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Mesaj yaz..."
+      />
+
+      <button onclick="sendMessage()">
+        Gönder
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const input = document.getElementById("messageInput");
+    const chatMessages = document.getElementById("chatMessages");
+
+    input.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    async function sendMessage() {
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      // Kullanıcı mesajı
+      addMessage(message, "user");
+
+      input.value = "";
+
+      // Typing efekti
+      const typing = document.createElement("div");
+      typing.className = "typing";
+      typing.id = "typing";
+      typing.innerText = "AI yazıyor...";
+      chatMessages.appendChild(typing);
+
+      scrollBottom();
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/ask-ai", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: message
+          })
+        });
+
+        const data = await response.json();
+
+        document.getElementById("typing").remove();
+
+        addMessage(data.response || data.error, "bot");
+
+      } catch (error) {
+        document.getElementById("typing").remove();
+
+        addMessage("Sunucuya bağlanılamadı.", "bot");
+      }
+    }
+
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement("div");
+
+      messageDiv.classList.add("message");
+      messageDiv.classList.add(sender);
+
+      messageDiv.innerHTML = text;
+
+      chatMessages.appendChild(messageDiv);
+
+      scrollBottom();
+    }
+
+    function scrollBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
